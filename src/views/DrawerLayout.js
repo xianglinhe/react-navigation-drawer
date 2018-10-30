@@ -412,7 +412,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
           {typeof this.props.children === 'function'
             ? this.props.children(this._openValue)
             : this.props.children}
-          {this._renderOverlay()}
         </Animated.View>
         <Animated.View
           pointerEvents="box-none"
