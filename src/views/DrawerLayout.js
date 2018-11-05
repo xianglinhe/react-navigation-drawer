@@ -178,7 +178,7 @@ export default class DrawerLayout extends Component {
     /* Overlay styles */
     const overlayOpacity = openValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, 0.7],
+      outputRange: [0, 0.1],
       extrapolate: 'clamp',
     });
     const animatedOverlayStyles = { opacity: overlayOpacity };
@@ -280,17 +280,23 @@ export default class DrawerLayout extends Component {
     { moveX, dx, dy }: PanResponderEventType,
   ) => {
 
-    if (this._lastOpenValue === 1) {
-      if (dx < 0) {
-        this._isClosing = true
+    if (Math.abs(dx) > Math.abs(dy) * 3) {
+
+      if (this._lastOpenValue === 1) {
+        if (dx < 0) {
+          this._isClosing = true
+        }
+      } else {
+        if (dx > 0) {
+          this._isClosing = false;
+        }
       }
-    } else {
-      if (dx > 0) {
-        this._isClosing = false;
-      }
+
+      return true
     }
 
-    return true
+    return false
+
 
     // if (!dx || !dy || Math.abs(dx) < MIN_SWIPE_DISTANCE) {
     //     return false;
@@ -350,17 +356,10 @@ export default class DrawerLayout extends Component {
 
   _panResponderMove = (e: EventType, { dx }: PanResponderEventType) => {
     let openValue = this._getOpenValueForX(dx);
-
-    console.log(openValue)
-
     if (this._isClosing) {
       // openValue = 1 - (this._closingAnchorValue - openValue);
       openValue = 1 - Math.abs(openValue)
     }
-
-
-    console.log(openValue)
-
     if (openValue > 1) {
       openValue = 1;
     } else if (openValue < 0) {
@@ -461,6 +460,6 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     right: 0,
-    zIndex: 1000,
+    zIndex: 1003,
   },
 });
