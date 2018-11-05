@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dimensions } from 'react-native';
-import DrawerLayout from 'react-native-drawer-layout-polyfill';
+import DrawerLayout from './DrawerLayout';
 import { SceneView } from 'react-navigation';
 
 import DrawerSidebar from './DrawerSidebar';
