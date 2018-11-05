@@ -34,6 +34,7 @@ export type PropType = {
   renderNavigationView: () => any,
   statusBarBackgroundColor?: string,
   useNativeAnimations?: boolean,
+  contentContainerStyle?: object,
 };
 
 export type StateType = {
@@ -183,6 +184,7 @@ export default class DrawerLayout extends Component {
     });
     const animatedOverlayStyles = { opacity: overlayOpacity };
     const pointerEvents = drawerShown ? 'auto' : 'none';
+    const contentContainerStyle = this.props.contentContainerStyle
 
     return (
       <View
@@ -191,7 +193,8 @@ export default class DrawerLayout extends Component {
       >
         <Animated.View style={[
           styles.main,
-          animatedContainerStyles
+          animatedContainerStyles,
+          contentContainerStyle
         ]}>
           {this.props.children}
         </Animated.View>

@@ -121,6 +121,7 @@ export default class DrawerView extends React.PureComponent {
             ? DrawerLayout.positions.Right
             : DrawerLayout.positions.Left
         }
+        contentContainerStyle={this.props.navigationConfig.contentContainerStyle}
       >
         <SceneView
           navigation={descriptor.navigation}
