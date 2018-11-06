@@ -292,6 +292,12 @@ export default class DrawerLayout extends Component {
     { moveX, dx, dy }: PanResponderEventType,
   ) => {
 
+    const {drawerShown} = this.state
+    if ((drawerShown && dx > 0) || (!drawerShown && dx < 0)) {
+      return false
+    }
+
+
     if (Math.abs(dx) > Math.abs(dy) * 3) {
 
       if (this._lastOpenValue === 1) {
