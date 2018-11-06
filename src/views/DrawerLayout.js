@@ -34,6 +34,7 @@ export type PropType = {
   renderNavigationView: () => any,
   statusBarBackgroundColor?: string,
   useNativeAnimations?: boolean,
+  isInteraction?: boolean,
   contentContainerStyle?: object,
 };
 
@@ -72,6 +73,7 @@ export default class DrawerLayout extends Component {
     drawerWidth: 0,
     drawerPosition: 'left',
     useNativeAnimations: true,
+    isInteraction: false
   };
 
   static positions = {
@@ -112,9 +114,9 @@ export default class DrawerLayout extends Component {
       }
 
       this._lastOpenValue = value;
-      if (this.props.onDrawerSlide) {
-        this.props.onDrawerSlide({ nativeEvent: { offset: value } });
-      }
+      // if (this.props.onDrawerSlide) {
+      //   this.props.onDrawerSlide({ nativeEvent: { offset: value } });
+      // }
     });
 
     this._panResponder = PanResponder.create({
@@ -249,6 +251,8 @@ export default class DrawerLayout extends Component {
       toValue: 1,
       bounciness: 0,
       restSpeedThreshold: 0.1,
+      speed:30,
+      isInteraction: this.props.isInteraction,
       useNativeDriver: this.props.useNativeAnimations,
       ...options,
     }).start(() => {
@@ -265,6 +269,8 @@ export default class DrawerLayout extends Component {
       toValue: 0,
       bounciness: 0,
       restSpeedThreshold: 1,
+      speed:30,
+      isInteraction: this.props.isInteraction,
       useNativeDriver: this.props.useNativeAnimations,
       ...options,
     }).start(() => {
