@@ -303,7 +303,6 @@ export default class DrawerLayout extends Component {
       return false
     }
 
-
     if (Math.abs(dx) > Math.abs(dy) * 3) {
 
       if (this._lastOpenValue === 1) {
