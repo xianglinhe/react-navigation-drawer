@@ -122,6 +122,7 @@ export default class DrawerView extends React.PureComponent {
             : DrawerLayout.positions.Left
         }
         contentContainerStyle={this.props.navigationConfig.contentContainerStyle}
+        overlayColor={this.props.navigationConfig.overlayColor}
       >
         <SceneView
           navigation={descriptor.navigation}
