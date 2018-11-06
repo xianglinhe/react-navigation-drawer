@@ -177,12 +177,12 @@ export default class DrawerLayout extends Component {
     };
 
     /* Overlay styles */
-    const overlayOpacity = openValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 0.1],
-      extrapolate: 'clamp',
-    });
-    const animatedOverlayStyles = { opacity: overlayOpacity };
+    // const overlayOpacity = openValue.interpolate({
+    //     inputRange: [0, 1],
+    //     outputRange: [0, 0],
+    //     extrapolate: 'clamp',
+    // });
+    // const animatedOverlayStyles = { opacity: overlayOpacity };
     const pointerEvents = drawerShown ? 'auto' : 'none';
     const contentContainerStyle = this.props.contentContainerStyle
 
@@ -204,7 +204,16 @@ export default class DrawerLayout extends Component {
         >
           <Animated.View
             pointerEvents={pointerEvents}
-            style={[styles.overlay, animatedOverlayStyles]}
+            style={[{
+              backgroundColor: 'transparent',
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              right: 0,
+              left: this.props.drawerWidth,
+              width: DEVICE_WIDTH - this.props.drawerWidth,
+              zIndex: 1003,
+            }]}
           />
         </TouchableWithoutFeedback>
         <Animated.View
