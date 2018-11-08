@@ -27,28 +27,13 @@ import {
 
 const DRAG_TOSS = 0.05;
 
-const IDLE = 'Idle';
-const DRAGGING = 'Dragging';
-const SETTLING = 'Settling';
-
 export type PropType = {
   children: any,
   drawerBackgroundColor?: string,
-  drawerPosition: 'left' | 'right',
   drawerWidth: number,
-  keyboardDismissMode?: 'none' | 'on-drag',
-  onDrawerClose?: Function,
-  onDrawerOpen?: Function,
-  onDrawerStateChanged?: Function,
   renderNavigationView: (progressAnimatedValue: any) => any,
-  useNativeAnimations: boolean,
 
   // brand new properties
-  drawerType: 'front' | 'back' | 'slide',
-  edgeWidth: number,
-  minSwipeDistance: number,
-  hideStatusBar?: boolean,
-  statusBarAnimation?: 'slide' | 'none' | 'fade',
   overlayColor: string,
   contentContainerStyle?: any,
 
@@ -76,11 +61,6 @@ export type DrawerMovementOptionType = {
 export default class DrawerLayout extends Component<PropType, StateType> {
   static defaultProps = {
     drawerWidth: 200,
-    drawerPosition: 'left',
-    useNativeAnimations: true,
-    drawerType: 'front',
-    edgeWidth: 20,
-    minSwipeDistance: 3,
     overlayColor: 'black',
   };
 
@@ -111,7 +91,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
 
   _updateAnimatedEvent = (props: PropType, state: StateType) => {
     // Event definition is based on
-    const { drawerPosition, drawerWidth, drawerType } = props;
+    const { drawerWidth } = props;
     const {
       dragX: dragXValue,
       touchX: touchXValue,
@@ -160,7 +140,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
 
     this._onGestureEvent = Animated.event(
       [{ nativeEvent: { translationX: dragXValue, x: touchXValue } }],
-      { useNativeDriver: props.useNativeAnimations }
+      { useNativeDriver: true }
     );
   };
 
@@ -179,7 +159,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   _handleRelease = nativeEvent => {
-    const { drawerWidth, drawerPosition, drawerType } = this.props;
+    const { drawerWidth } = this.props;
     const { drawerShown, containerWidth } = this.state;
     let { translationX: dragX, velocityX, x: touchX } = nativeEvent;
 
@@ -217,9 +197,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     velocity: number,
   }) => {
     this.state.dragX.setValue(0);
-    this.state.touchX.setValue(
-      this.props.drawerPosition === 'left' ? 0 : this.state.containerWidth
-    );
+    this.state.touchX.setValue(0);
 
     if (typeof fromValue === 'number') {
       this.state.drawerTranslation.setValue(fromValue);
@@ -230,8 +208,9 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     Animated.spring(this.state.drawerTranslation, {
       velocity,
       bounciness: 0,
+      overshootClamping: true,
       toValue,
-      useNativeDriver: this.props.useNativeAnimations,
+      useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) {
       }
@@ -279,8 +258,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     const {
       drawerBackgroundColor,
       drawerWidth,
-      drawerPosition,
-      drawerType,
       contentContainerStyle,
     } = this.props;
 
@@ -324,13 +301,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
 
   render() {
     const { drawerShown, containerWidth } = this.state;
-
-    const {
-      drawerPosition,
-      drawerType,
-      edgeWidth,
-      minSwipeDistance,
-    } = this.props;
 
     return (
       <PanGestureHandler
