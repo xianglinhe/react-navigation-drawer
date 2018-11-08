@@ -87,6 +87,10 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   _onTapHandlerStateChange = ({ nativeEvent }) => {
+
+
+    console.log('tap')
+
     if (this.state.drawerShown && (nativeEvent.oldState === State.ACTIVE || nativeEvent.state === State.FAILED)) {
       this.closeDrawer();
     }
@@ -100,23 +104,51 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     const { drawerShown } = this.state;
     let { translationX: dragX, velocityX, x: touchX } = nativeEvent;
 
-    const startOffsetX = dragX + (drawerShown ? drawerWidth : 0);
-    const projOffsetX = startOffsetX + DRAG_TOSS * velocityX;
+    const projOffsetX = dragX + DRAG_TOSS * velocityX;
 
-    const shouldOpen = projOffsetX > drawerWidth / 2;
+    const shouldOpen = drawerShown ? (drawerWidth+dragX) > drawerWidth / 2 : dragX > drawerWidth / 2
+    const closeToValue = drawerShown ? -drawerWidth : 0
 
-    if (shouldOpen) {
-      this._animateDrawer({
-        fromValue: startOffsetX,
-        toValue: drawerWidth,
-        velocity: velocityX,
-      });
+    console.log(dragX)
+    console.log(velocityX)
+    console.log(projOffsetX)
+    console.log(drawerWidth+dragX)
+    console.log(shouldOpen)
+    console.log(drawerShown)
+
+
+    if (drawerShown) {
+      if (shouldOpen) {
+        this._animateDrawer({
+          fromValue: dragX,
+          toValue: drawerWidth,
+          velocity: velocityX,
+          opening: true
+        });
+      } else {
+        this._animateDrawer({
+          fromValue: dragX,
+          toValue: -drawerWidth,
+          velocity: velocityX,
+          opening: false
+        });
+      }
     } else {
-      this._animateDrawer({
-        fromValue: startOffsetX,
-        toValue: 0,
-        velocity: velocityX,
-      });
+      if (shouldOpen) {
+        this._animateDrawer({
+          fromValue: dragX,
+          toValue: drawerWidth,
+          velocity: velocityX,
+          opening: true
+        });
+      } else {
+        this._animateDrawer({
+          fromValue: dragX,
+          toValue: 0,
+          velocity: velocityX,
+          opening: false
+        });
+      }
     }
   };
 
@@ -124,21 +156,28 @@ export default class DrawerLayout extends Component<PropType, StateType> {
                       fromValue,
                       toValue,
                       velocity,
+                      opening
                     }: {
     fromValue: number,
     toValue: number,
     velocity: number,
+    opening: boolean
   }) => {
 
-    const willShow = toValue !== 0;
-    // this.setState({ drawerShown: willShow });
-    this.state.drawerShown = willShow
+    // if (typeof fromValue === 'number') {
+    //     this._openValue.setValue(fromValue);
+    // }
+
     Animated.spring(this._openValue, {
       velocity,
       bounciness: 0,
       toValue,
       useNativeDriver: true,
     }).start(({ finished }) => {
+      this._openValue.setValue(0)
+      if (this.state.drawerShown !== opening) {
+        this.setState({ drawerShown: opening });
+      }
     });
   };
 
@@ -146,6 +185,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this._animateDrawer({
       toValue: this.props.drawerWidth,
       velocity: options.velocity ? options.velocity : 0,
+      opening: true
     });
   };
 
@@ -153,6 +193,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this._animateDrawer({
       toValue: 0,
       velocity: options.velocity ? options.velocity : 0,
+      opening: false
     });
   };
 
@@ -185,11 +226,20 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       contentContainerStyle,
     } = this.props;
 
-    const containerTranslateX = this._openValue.interpolate({
-      inputRange: [0, drawerWidth],
-      outputRange: [0, drawerWidth],
-      extrapolate: 'clamp',
-    });
+    let containerTranslateX
+    if (drawerShown) {
+      containerTranslateX = this._openValue.interpolate({
+        inputRange: [-drawerWidth, 0],
+        outputRange: [0, drawerWidth],
+        extrapolate: 'clamp',
+      })
+    } else {
+      containerTranslateX = this._openValue.interpolate({
+        inputRange: [0, drawerWidth],
+        outputRange: [0, drawerWidth],
+        extrapolate: 'clamp',
+      })
+    }
     let containerStyles = {
       transform: [{ translateX: containerTranslateX }],
     };
