@@ -71,7 +71,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     };
 
     this._openValue = new Animated.Value(0)
-
     this._onGestureEvent = Animated.event(
       [{ nativeEvent: { translationX: this._openValue } }],
       { useNativeDriver: true }
@@ -87,22 +86,15 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   _onTapHandlerStateChange = ({ nativeEvent }) => {
-
-
-    console.log('tap')
-
-    if (this.state.drawerShown && (nativeEvent.oldState === State.ACTIVE || nativeEvent.state === State.FAILED)) {
+    if (this.state.drawerShown && (nativeEvent.oldState === State.ACTIVE)) {
       this.closeDrawer();
     }
   };
 
   _handleRelease = nativeEvent => {
 
-    console.log('release')
-
-    const { drawerWidth, containerWidth } = this.props;
-    const { drawerShown } = this.state;
-    let { translationX: dragX, velocityX, x: touchX } = nativeEvent;
+    const { drawerWidth } = this.props;
+    let { translationX: dragX, velocityX } = nativeEvent;
 
     const projOffsetX = dragX + DRAG_TOSS * velocityX;
     const shouldOpen = projOffsetX > drawerWidth / 2
@@ -112,12 +104,14 @@ export default class DrawerLayout extends Component<PropType, StateType> {
         fromValue: dragX,
         toValue: drawerWidth,
         velocity: velocityX,
+        shouldOpen: true
       });
     } else {
       this._animateDrawer({
         fromValue: dragX,
         toValue: 0,
         velocity: velocityX,
+        shouldOpen: false
       });
     }
   };
@@ -126,23 +120,24 @@ export default class DrawerLayout extends Component<PropType, StateType> {
                       fromValue,
                       toValue,
                       velocity,
+                      shouldOpen
                     }: {
     fromValue: number,
     toValue: number,
     velocity: number,
+    shouldOpen: boolean
   }) => {
-
-    // if (typeof fromValue === 'number') {
-    //     this._openValue.setValue(fromValue);
-    // }
-
     Animated.spring(this._openValue, {
       velocity,
       bounciness: 0,
       toValue,
       useNativeDriver: true,
     }).start(({ finished }) => {
-      this._openValue.setValue(0)
+      if (this.state.drawerShown !== shouldOpen) {    //linzi????
+
+        console.log('sets')
+        this.setState({drawerShown: shouldOpen})
+      }
     });
   };
 
@@ -150,6 +145,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this._animateDrawer({
       toValue: this.props.drawerWidth,
       velocity: options.velocity ? options.velocity : 0,
+      shouldOpen: true
     });
   };
 
@@ -157,6 +153,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this._animateDrawer({
       toValue: 0,
       velocity: options.velocity ? options.velocity : 0,
+      shouldOpen: false
     });
   };
 
@@ -164,7 +161,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     /* Overlay styles */
     const overlayOpacity = this._openValue.interpolate({
       inputRange: [0, this.props.drawerWidth],
-      outputRange: [0, 0.7],
+      outputRange: [0, 0.1],
       extrapolate: 'clamp',
     });
     const dynamicOverlayStyles = {
@@ -208,6 +205,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
           ]}
         >
           {this.props.children}
+          {this._renderOverlay()}
         </Animated.View>
         <View
           pointerEvents="box-none"
@@ -221,22 +219,17 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   render() {
-    const { drawerShown, containerWidth } = this.state;
-
-    const {
-      minSwipeDistance,
-    } = this.props;
+    const { drawerShown } = this.state;
+    const { minSwipeDistance } = this.props;
 
     const gestureOrientation = drawerShown ? -1 : 1
-
     return (
       <PanGestureHandler
-        hitSlop={0}
+        enabled={!drawerShown}
         minOffsetX={gestureOrientation * minSwipeDistance}
         maxDeltaY={15}
         onGestureEvent={this._onGestureEvent}
         onHandlerStateChange={this._openingHandlerStateChange}
-        ref={this.props.gestureRef}
       >
         {this._renderDrawer()}
       </PanGestureHandler>
@@ -262,6 +255,6 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1003,
+    zIndex: 1000,
   },
 });
