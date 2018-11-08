@@ -105,50 +105,20 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     let { translationX: dragX, velocityX, x: touchX } = nativeEvent;
 
     const projOffsetX = dragX + DRAG_TOSS * velocityX;
+    const shouldOpen = projOffsetX > drawerWidth / 2
 
-    const shouldOpen = drawerShown ? (drawerWidth+dragX) > drawerWidth / 2 : dragX > drawerWidth / 2
-    const closeToValue = drawerShown ? -drawerWidth : 0
-
-    console.log(dragX)
-    console.log(velocityX)
-    console.log(projOffsetX)
-    console.log(drawerWidth+dragX)
-    console.log(shouldOpen)
-    console.log(drawerShown)
-
-
-    if (drawerShown) {
-      if (shouldOpen) {
-        this._animateDrawer({
-          fromValue: dragX,
-          toValue: drawerWidth,
-          velocity: velocityX,
-          opening: true
-        });
-      } else {
-        this._animateDrawer({
-          fromValue: dragX,
-          toValue: -drawerWidth,
-          velocity: velocityX,
-          opening: false
-        });
-      }
+    if (shouldOpen) {
+      this._animateDrawer({
+        fromValue: dragX,
+        toValue: drawerWidth,
+        velocity: velocityX,
+      });
     } else {
-      if (shouldOpen) {
-        this._animateDrawer({
-          fromValue: dragX,
-          toValue: drawerWidth,
-          velocity: velocityX,
-          opening: true
-        });
-      } else {
-        this._animateDrawer({
-          fromValue: dragX,
-          toValue: 0,
-          velocity: velocityX,
-          opening: false
-        });
-      }
+      this._animateDrawer({
+        fromValue: dragX,
+        toValue: 0,
+        velocity: velocityX,
+      });
     }
   };
 
@@ -156,12 +126,10 @@ export default class DrawerLayout extends Component<PropType, StateType> {
                       fromValue,
                       toValue,
                       velocity,
-                      opening
                     }: {
     fromValue: number,
     toValue: number,
     velocity: number,
-    opening: boolean
   }) => {
 
     // if (typeof fromValue === 'number') {
@@ -175,9 +143,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       useNativeDriver: true,
     }).start(({ finished }) => {
       this._openValue.setValue(0)
-      if (this.state.drawerShown !== opening) {
-        this.setState({ drawerShown: opening });
-      }
     });
   };
 
@@ -185,7 +150,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this._animateDrawer({
       toValue: this.props.drawerWidth,
       velocity: options.velocity ? options.velocity : 0,
-      opening: true
     });
   };
 
@@ -193,7 +157,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this._animateDrawer({
       toValue: 0,
       velocity: options.velocity ? options.velocity : 0,
-      opening: false
     });
   };
 
@@ -226,20 +189,11 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       contentContainerStyle,
     } = this.props;
 
-    let containerTranslateX
-    if (drawerShown) {
-      containerTranslateX = this._openValue.interpolate({
-        inputRange: [-drawerWidth, 0],
-        outputRange: [0, drawerWidth],
-        extrapolate: 'clamp',
-      })
-    } else {
-      containerTranslateX = this._openValue.interpolate({
-        inputRange: [0, drawerWidth],
-        outputRange: [0, drawerWidth],
-        extrapolate: 'clamp',
-      })
-    }
+    let containerTranslateX = this._openValue.interpolate({
+      inputRange: [0, drawerWidth],
+      outputRange: [0, drawerWidth],
+      extrapolate: 'clamp',
+    })
     let containerStyles = {
       transform: [{ translateX: containerTranslateX }],
     };
