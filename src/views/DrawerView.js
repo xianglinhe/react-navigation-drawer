@@ -107,37 +107,17 @@ export default class DrawerView extends React.PureComponent {
     const activeKey = state.routes[state.index].key;
     const descriptor = this.props.descriptors[activeKey];
 
-    const { drawerLockMode } = descriptor.options;
-
     return (
       <DrawerLayout
         ref={c => {
           this._drawer = c;
         }}
         gestureRef={this.drawerGestureRef}
-        drawerLockMode={
-          drawerLockMode ||
-          (this.props.screenProps && this.props.screenProps.drawerLockMode) ||
-          this.props.navigationConfig.drawerLockMode
-        }
         drawerBackgroundColor={
           this.props.navigationConfig.drawerBackgroundColor
         }
         drawerWidth={this.state.drawerWidth}
-        onDrawerOpen={this._handleDrawerOpen}
-        onDrawerClose={this._handleDrawerClose}
-        useNativeAnimations={this.props.navigationConfig.useNativeAnimations}
         renderNavigationView={this._renderNavigationView}
-        drawerPosition={
-          this.props.navigationConfig.drawerPosition === 'right'
-            ? DrawerLayout.positions.Right
-            : DrawerLayout.positions.Left
-        }
-        /* props specific to react-native-gesture-handler/DrawerLayout */
-        drawerType={this.props.navigationConfig.drawerType}
-        edgeWidth={this.props.navigationConfig.edgeWidth}
-        hideStatusBar={this.props.navigationConfig.hideStatusBar}
-        statusBarAnimation={this.props.navigationConfig.statusBarAnimation}
         minSwipeDistance={this.props.navigationConfig.minSwipeDistance}
         overlayColor={this.props.navigationConfig.overlayColor}
         contentContainerStyle={this.props.navigationConfig.contentContainerStyle}
