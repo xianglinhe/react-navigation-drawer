@@ -210,15 +210,18 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     }
 
     const willShow = toValue !== 0;
-    this.state.drawerShown = toValue
-    // this.setState({drawerShown: toValue})
-    Animated.timing(this.state.drawerTranslation, {
-      duration: 180,
+    this.state.drawerShown = willShow
+    Animated.spring(this.state.drawerTranslation, {
+      velocity,
+      bounciness: 0,
+      overshootClamping: true,
       toValue,
-      isInteraction:false,
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) {
+        this.overlayRef.setNativeProps({
+          pointerEvents: willShow ? 'auto' : 'none'
+        })
       }
     });
   };
@@ -242,7 +245,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     invariant(this._openValue, 'should be set');
     const overlayOpacity = this._openValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, 0.7],
+      outputRange: [0, 0.1],
       extrapolate: 'clamp',
     });
     const dynamicOverlayStyles = {
@@ -252,7 +255,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     return (
       <TapGestureHandler onHandlerStateChange={this._onTapHandlerStateChange}>
         <Animated.View
-          pointerEvents={this.state.drawerShown ? 'auto' : 'none'}
+          ref={(ref) => this.overlayRef = ref}
           style={[styles.overlay, dynamicOverlayStyles]}
         />
       </TapGestureHandler>
