@@ -165,9 +165,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   }
 
   _handleRelease = nativeEvent => {
-
-    console.log(nativeEvent)
-
     const { drawerWidth } = this.props;
     const { drawerShown, containerWidth } = this.state;
     let { translationX: dragX, velocityX, x: touchX } = nativeEvent;
@@ -343,12 +340,8 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   render() {
-
-    console.log('render')
     return (
       <PanGestureHandler
-        hitSlop={0}
-        maxDeltaY={15}
         onGestureEvent={this._onGestureEvent}
         onHandlerStateChange={this._openingHandlerStateChange}
         ref={this.props.gestureRef}
