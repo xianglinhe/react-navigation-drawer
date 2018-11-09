@@ -15,7 +15,7 @@
 // that could be found when using the drawer component
 
 import React, { Component } from 'react';
-import { Animated, StyleSheet, View, Keyboard, StatusBar } from 'react-native';
+import { Animated, StyleSheet, View, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import invariant from '../utils/invariant';
 import { AnimatedEvent } from 'react-native/Libraries/Animated/src/AnimatedEvent';
 
@@ -158,6 +158,12 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     }
   };
 
+  _onOverlayClick = () => {
+    if (this.state.drawerShown) {
+      this.closeDrawer();
+    }
+  }
+
   _handleRelease = nativeEvent => {
     const { drawerWidth } = this.props;
     const { drawerShown, containerWidth } = this.state;
@@ -205,11 +211,11 @@ export default class DrawerLayout extends Component<PropType, StateType> {
 
     const willShow = toValue !== 0;
     this.state.drawerShown = toValue
-    Animated.spring(this.state.drawerTranslation, {
-      velocity,
-      bounciness: 0,
-      overshootClamping: true,
+    // this.setState({drawerShown: toValue})
+    Animated.timing(this.state.drawerTranslation, {
+      duration: 180,
       toValue,
+      isInteraction:false,
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) {
@@ -251,6 +257,35 @@ export default class DrawerLayout extends Component<PropType, StateType> {
         />
       </TapGestureHandler>
     );
+
+
+    //
+    // /* Overlay styles */
+    // invariant(this._openValue, 'should be set');
+    // const overlayOpacity = this._openValue.interpolate({
+    //     inputRange: [0, 1],
+    //     outputRange: [0, 0.7],
+    //     extrapolate: 'clamp',
+    // });
+    // const animatedOverlayStyles = {
+    //     opacity: overlayOpacity,
+    //     backgroundColor: 'red'//this.props.overlayColor,
+    // };
+    // const pointerEvents = this.state.drawerShown ? 'auto' : 'none';
+    // const contentContainerStyle = this.props.contentContainerStyle
+    //
+    // return (
+    //
+    //         <TouchableWithoutFeedback
+    //             pointerEvents={pointerEvents}
+    //             onPress={this._onOverlayClick}
+    //         >
+    //             <Animated.View
+    //                 pointerEvents={pointerEvents}
+    //                 style={[styles.overlay, animatedOverlayStyles]}
+    //             />
+    //         </TouchableWithoutFeedback>
+    //     )
   };
 
   _renderDrawer = () => {
@@ -300,8 +335,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   render() {
-    const { drawerShown, containerWidth } = this.state;
-
     return (
       <PanGestureHandler
         hitSlop={0}
@@ -337,6 +370,6 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1000,
+    zIndex: 1004,
   },
 });
