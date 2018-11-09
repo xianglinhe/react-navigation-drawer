@@ -165,6 +165,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   }
 
   _handleRelease = nativeEvent => {
+
     const { drawerWidth } = this.props;
     const { drawerShown, containerWidth } = this.state;
     let { translationX: dragX, velocityX, x: touchX } = nativeEvent;
@@ -211,6 +212,12 @@ export default class DrawerLayout extends Component<PropType, StateType> {
 
     const willShow = toValue !== 0;
     this.state.drawerShown = willShow
+    this.containerRef.setNativeProps({
+      pointerEvents: willShow ? 'none' : 'auto'
+    })
+    // this.overlayRef.setNativeProps({
+    //     pointerEvents: willShow ? 'auto' : 'none'
+    // })
     Animated.spring(this.state.drawerTranslation, {
       velocity,
       bounciness: 0,
@@ -218,11 +225,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       toValue,
       useNativeDriver: true,
     }).start(({ finished }) => {
-      if (finished) {
-        this.overlayRef.setNativeProps({
-          pointerEvents: willShow ? 'auto' : 'none'
-        })
-      }
     });
   };
 
@@ -314,6 +316,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     return (
       <Animated.View style={styles.main}>
         <Animated.View
+          ref={(ref) => this.containerRef = ref}
           style={[
             styles.containerInFront,
             containerStyles,
@@ -323,7 +326,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
           {typeof this.props.children === 'function'
             ? this.props.children(this._openValue)
             : this.props.children}
-          {this._renderOverlay()}
+          {/*{this._renderOverlay()}*/}
         </Animated.View>
         <Animated.View
           pointerEvents="box-none"
@@ -373,6 +376,6 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1004,
+    zIndex: 1000,
   },
 });
