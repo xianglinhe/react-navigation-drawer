@@ -342,7 +342,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   render() {
     let offset = Platform.select({
       ios: [-20, 20],
-      android: [-40, 40]
+      android: [-50, 50]
     })
     return (
       <PanGestureHandler
