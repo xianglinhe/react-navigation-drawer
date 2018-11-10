@@ -15,7 +15,7 @@
 // that could be found when using the drawer component
 
 import React, { Component } from 'react';
-import { Animated, StyleSheet, View, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { Animated, StyleSheet, View, Keyboard, TouchableWithoutFeedback, Platform } from 'react-native';
 import invariant from '../utils/invariant';
 import { AnimatedEvent } from 'react-native/Libraries/Animated/src/AnimatedEvent';
 
@@ -340,10 +340,13 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   render() {
+    let offset = Platform.select({
+      ios: [-20, 20],
+      android: [-40, 40]
+    })
     return (
       <PanGestureHandler
-        activeOffsetX={[-1, 1]}
-        failOffsetY={[-15, 15]}
+        activeOffsetX={offset}
         onGestureEvent={this._onGestureEvent}
         onHandlerStateChange={this._openingHandlerStateChange}
         ref={this.props.gestureRef}
