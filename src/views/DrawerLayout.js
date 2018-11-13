@@ -27,6 +27,10 @@ import {
 
 const DRAG_TOSS = 0.05;
 
+const IDLE = 'Idle';
+const DRAGGING = 'Dragging';
+const SETTLING = 'Settling';
+
 export type PropType = {
   children: any,
   drawerBackgroundColor?: string,
@@ -148,6 +152,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     if (nativeEvent.oldState === State.ACTIVE) {
       this._handleRelease(nativeEvent);
     } else if (nativeEvent.state === State.ACTIVE) {
+      this._emitStateChanged(DRAGGING, false);
       Keyboard.dismiss();
     }
   };
@@ -164,7 +169,12 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     }
   }
 
-  _handleRelease = nativeEvent => {
+  _emitStateChanged = (newState: string, drawerWillShow: boolean) => {
+    this.props.onDrawerStateChanged &&
+    this.props.onDrawerStateChanged(newState, drawerWillShow);
+  };
+
+    _handleRelease = nativeEvent => {
     const { drawerWidth } = this.props;
     const { drawerShown, containerWidth } = this.state;
     let { translationX: dragX, velocityX, x: touchX } = nativeEvent;
@@ -211,6 +221,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
 
     const willShow = toValue !== 0;
     this.state.drawerShown = willShow
+    this._emitStateChanged(SETTLING, willShow);
     this.containerRef.setNativeProps({
       pointerEvents: willShow ? 'none' : 'auto'
     })
@@ -224,10 +235,14 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       toValue,
       useNativeDriver: true,
     }).start(({ finished }) => {
+      this._emitStateChanged(IDLE, willShow);
     });
   };
 
   openDrawer = (options: DrawerMovementOptionType = {}) => {
+    if (this.state.drawerShown) {
+      return
+    }
     this._animateDrawer({
       toValue: this.props.drawerWidth,
       velocity: options.velocity ? options.velocity : 0,
@@ -235,6 +250,9 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   closeDrawer = (options: DrawerMovementOptionType = {}) => {
+    if (!this.state.drawerShown) {
+      return
+    }
     this._animateDrawer({
       toValue: 0,
       velocity: options.velocity ? options.velocity : 0,
