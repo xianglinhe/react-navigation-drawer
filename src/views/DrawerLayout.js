@@ -21,7 +21,6 @@ import { AnimatedEvent } from 'react-native/Libraries/Animated/src/AnimatedEvent
 
 import {
   PanGestureHandler,
-  TapGestureHandler,
   State,
 } from 'react-native-gesture-handler';
 
@@ -157,12 +156,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     }
   };
 
-  _onTapHandlerStateChange = ({ nativeEvent }) => {
-    if (this.state.drawerShown && (nativeEvent.oldState === State.ACTIVE || nativeEvent.state === State.FAILED)) {
-      this.closeDrawer();
-    }
-  };
-
   _onOverlayClick = () => {
     if (this.state.drawerShown) {
       this.closeDrawer();
@@ -222,8 +215,8 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     const willShow = toValue !== 0;
     this.state.drawerShown = willShow
     this._emitStateChanged(SETTLING, willShow);
-    this.containerRef.setNativeProps({
-      pointerEvents: willShow ? 'none' : 'auto'
+    this.touchableView.setNativeProps({
+      pointerEvents: willShow ? 'box-only' : 'box-none'
     })
     // this.overlayRef.setNativeProps({
     //     pointerEvents: willShow ? 'auto' : 'none'
@@ -259,57 +252,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     });
   };
 
-  _renderOverlay = () => {
-    /* Overlay styles */
-    invariant(this._openValue, 'should be set');
-    const overlayOpacity = this._openValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 0.1],
-      extrapolate: 'clamp',
-    });
-    const dynamicOverlayStyles = {
-      opacity: overlayOpacity,
-      backgroundColor: this.props.overlayColor,
-    };
-    return (
-      <TapGestureHandler onHandlerStateChange={this._onTapHandlerStateChange}>
-        <Animated.View
-          ref={(ref) => this.overlayRef = ref}
-          style={[styles.overlay, dynamicOverlayStyles]}
-        />
-      </TapGestureHandler>
-    );
-
-
-    //
-    // /* Overlay styles */
-    // invariant(this._openValue, 'should be set');
-    // const overlayOpacity = this._openValue.interpolate({
-    //     inputRange: [0, 1],
-    //     outputRange: [0, 0.7],
-    //     extrapolate: 'clamp',
-    // });
-    // const animatedOverlayStyles = {
-    //     opacity: overlayOpacity,
-    //     backgroundColor: 'red'//this.props.overlayColor,
-    // };
-    // const pointerEvents = this.state.drawerShown ? 'auto' : 'none';
-    // const contentContainerStyle = this.props.contentContainerStyle
-    //
-    // return (
-    //
-    //         <TouchableWithoutFeedback
-    //             pointerEvents={pointerEvents}
-    //             onPress={this._onOverlayClick}
-    //         >
-    //             <Animated.View
-    //                 pointerEvents={pointerEvents}
-    //                 style={[styles.overlay, animatedOverlayStyles]}
-    //             />
-    //         </TouchableWithoutFeedback>
-    //     )
-  };
-
   _renderDrawer = () => {
     const { drawerShown } = this.state;
     const {
@@ -340,10 +282,10 @@ export default class DrawerLayout extends Component<PropType, StateType> {
             contentContainerStyle,
           ]}
         >
-          {typeof this.props.children === 'function'
-            ? this.props.children(this._openValue)
-            : this.props.children}
-          {/*{this._renderOverlay()}*/}
+          <TouchableOpacity onPress={() => {this.closeDrawer()}} style={{flex: 1}} activeOpacity={1} ref={ref => this.touchableView = ref}>
+            {typeof this.props.children === 'function' ? this.props.children(this._openValue) : this.props.children}
+          </TouchableOpacity>
+
         </Animated.View>
         <Animated.View
           pointerEvents="box-none"
