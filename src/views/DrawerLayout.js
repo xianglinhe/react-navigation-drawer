@@ -15,7 +15,7 @@
 // that could be found when using the drawer component
 
 import React, { Component } from 'react';
-import { Animated, StyleSheet, View, Keyboard, TouchableWithoutFeedback, Platform } from 'react-native';
+import { Animated, StyleSheet, View, Keyboard, TouchableOpacity, Platform } from 'react-native';
 import invariant from '../utils/invariant';
 import { AnimatedEvent } from 'react-native/Libraries/Animated/src/AnimatedEvent';
 
@@ -37,7 +37,6 @@ export type PropType = {
   renderNavigationView: (progressAnimatedValue: any) => any,
 
   // brand new properties
-  overlayColor: string,
   contentContainerStyle?: any,
 
   // Properties not yet supported
@@ -64,7 +63,6 @@ export type DrawerMovementOptionType = {
 export default class DrawerLayout extends Component<PropType, StateType> {
   static defaultProps = {
     drawerWidth: 200,
-    overlayColor: 'black',
   };
 
   static positions = {
@@ -156,12 +154,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     }
   };
 
-  _onOverlayClick = () => {
-    if (this.state.drawerShown) {
-      this.closeDrawer();
-    }
-  }
-
   _emitStateChanged = (newState: string, drawerWillShow: boolean) => {
     this.props.onDrawerStateChanged &&
     this.props.onDrawerStateChanged(newState, drawerWillShow);
@@ -218,9 +210,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this.touchableView.setNativeProps({
       pointerEvents: willShow ? 'box-only' : 'box-none'
     })
-    // this.overlayRef.setNativeProps({
-    //     pointerEvents: willShow ? 'auto' : 'none'
-    // })
+    
     Animated.spring(this.state.drawerTranslation, {
       velocity,
       bounciness: 0,
@@ -282,8 +272,14 @@ export default class DrawerLayout extends Component<PropType, StateType> {
             contentContainerStyle,
           ]}
         >
-          <TouchableOpacity onPress={() => {this.closeDrawer()}} style={{flex: 1}} activeOpacity={1} ref={ref => this.touchableView = ref}>
-            {typeof this.props.children === 'function' ? this.props.children(this._openValue) : this.props.children}
+          <TouchableOpacity 
+            onPress={() => {this.closeDrawer()}} 
+            style={{flex: 1}} 
+            activeOpacity={1} 
+            ref={ref => this.touchableView = ref}>
+              {typeof this.props.children === 'function' 
+              ? this.props.children(this._openValue) 
+              : this.props.children}
           </TouchableOpacity>
 
         </Animated.View>
@@ -335,9 +331,5 @@ const styles = StyleSheet.create({
     flex: 1,
     zIndex: 0,
     overflow: 'hidden',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1000,
   },
 });
