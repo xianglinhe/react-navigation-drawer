@@ -85,6 +85,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       drawerTranslation,
       drawerShown: false,
       containerWidth: 0,
+      isOpening: false,
     };
 
     this._updateAnimatedEvent(props, this.state);
@@ -154,6 +155,13 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     }
   };
 
+  closeHandStateChange = ({nativeEvent}) => {
+    //when touch is ending ,close the drawView
+    if (nativeEvent.state === 5 && this.state.isOpening) {  //5: release the touch
+    this.closeDrawer()
+    }
+  }
+
   _emitStateChanged = (newState: string, drawerWillShow: boolean) => {
     this.props.onDrawerStateChanged &&
     this.props.onDrawerStateChanged(newState, drawerWillShow);
@@ -218,6 +226,11 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       toValue,
       useNativeDriver: true,
     }).start(({ finished }) => {
+      if (willShow) {
+        this.state.isOpening = true
+      } else {
+        this.state.isOpening = false
+      }
       this._emitStateChanged(IDLE, willShow);
     });
   };
@@ -264,25 +277,14 @@ export default class DrawerLayout extends Component<PropType, StateType> {
 
     return (
       <Animated.View style={styles.main}>
-        <Animated.View
-          ref={(ref) => this.containerRef = ref}
-          style={[
-            styles.containerInFront,
-            containerStyles,
-            contentContainerStyle,
-          ]}
-        >
-          <TouchableOpacity 
-            onPress={() => {this.closeDrawer()}} 
-            style={{flex: 1}} 
-            activeOpacity={1} 
-            ref={ref => this.touchableView = ref}>
-              {typeof this.props.children === 'function' 
-              ? this.props.children(this._openValue) 
-              : this.props.children}
-          </TouchableOpacity>
-
-        </Animated.View>
+      <TapGestureHandler  onHandlerStateChange={this.closeHandStateChange} maxDeltaX={5} maxDeltaY={5}>
+          <Animated.View 
+          style={[styles.containerInFront, containerStyles, contentContainerStyle]}
+          ref={ref => this.touchableView = ref}>
+            {typeof this.props.children === 'function' ? this.props.children(this._openValue) : this.props.children}
+          </Animated.View >
+      </TapGestureHandler>
+      
         <Animated.View
           pointerEvents="box-none"
           style={[styles.drawerContainer]}
