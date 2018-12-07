@@ -20,6 +20,7 @@ import invariant from '../utils/invariant';
 import { AnimatedEvent } from 'react-native/Libraries/Animated/src/AnimatedEvent';
 
 import {
+  TapGestureHandler,
   PanGestureHandler,
   State,
 } from 'react-native-gesture-handler';
