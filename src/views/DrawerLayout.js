@@ -1,10 +1,4 @@
-/* eslint-disable */
-
 // @flow
-
-// #########################################################
-//    This is vendored from react-native-gesture-handler!
-// #########################################################
 
 // This component is based on RN's DrawerLayoutAndroid API
 //
@@ -15,15 +9,12 @@
 // that could be found when using the drawer component
 
 import React, { Component } from 'react';
-import { Animated, StyleSheet, View, Keyboard, TouchableOpacity, Platform } from 'react-native';
-import invariant from '../utils/invariant';
+import { Animated, StyleSheet, View, Keyboard, StatusBar, Dimensions } from 'react-native';
+import invariant from 'invariant';
 import { AnimatedEvent } from 'react-native/Libraries/Animated/src/AnimatedEvent';
 
-import {
-  TapGestureHandler,
-  PanGestureHandler,
-  State,
-} from 'react-native-gesture-handler';
+import { PanGestureHandler, TapGestureHandler, State } from 'react-native-gesture-handler';
+const { width: windowWidth, height: windowHeight } = Dimensions.get('window')
 
 const DRAG_TOSS = 0.05;
 
@@ -34,10 +25,22 @@ const SETTLING = 'Settling';
 export type PropType = {
   children: any,
   drawerBackgroundColor?: string,
+  drawerPosition: 'left' | 'right',
   drawerWidth: number,
+  keyboardDismissMode?: 'none' | 'on-drag',
+  onDrawerClose?: Function,
+  onDrawerOpen?: Function,
+  onDrawerStateChanged?: Function,
   renderNavigationView: (progressAnimatedValue: any) => any,
+  useNativeAnimations: boolean,
 
   // brand new properties
+  drawerType: 'front' | 'back' | 'slide',
+  edgeWidth: number,
+  minSwipeDistance: number,
+  hideStatusBar?: boolean,
+  statusBarAnimation?: 'slide' | 'none' | 'fade',
+  overlayColor: string,
   contentContainerStyle?: any,
 
   // Properties not yet supported
@@ -46,7 +49,6 @@ export type PropType = {
 };
 
 export type StateType = {
-  drawerShown: boolean,
   dragX: any,
   touchX: any,
   drawerTranslation: any,
@@ -64,6 +66,12 @@ export type DrawerMovementOptionType = {
 export default class DrawerLayout extends Component<PropType, StateType> {
   static defaultProps = {
     drawerWidth: 200,
+    drawerPosition: 'left',
+    useNativeAnimations: true,
+    drawerType: 'back',
+    edgeWidth: windowWidth,
+    minSwipeDistance: 3,
+    overlayColor: 'transparent',
   };
 
   static positions = {
@@ -72,6 +80,10 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
   _openValue: ?Animated.Interpolation;
   _onGestureEvent: ?AnimatedEvent;
+  _accessibilityIsModalView = React.createRef();
+  _pointerEventsView = React.createRef();
+  _panGestureHandler = React.createRef();
+  _drawerShown = false;
 
   constructor(props: PropType, context: any) {
     super(props, context);
@@ -84,17 +96,26 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       dragX,
       touchX,
       drawerTranslation,
-      drawerShown: false,
       containerWidth: 0,
-      isOpening: false,
     };
 
     this._updateAnimatedEvent(props, this.state);
   }
 
+  componentWillUpdate(props: PropType, state: StateType) {
+    if (
+      this.props.drawerPosition !== props.drawerPosition ||
+      this.props.drawerWidth !== props.drawerWidth ||
+      this.props.drawerType !== props.drawerType ||
+      this.state.containerWidth !== state.containerWidth
+    ) {
+      this._updateAnimatedEvent(props, state);
+    }
+  }
+
   _updateAnimatedEvent = (props: PropType, state: StateType) => {
     // Event definition is based on
-    const { drawerWidth } = props;
+    const { drawerPosition, drawerWidth, drawerType } = props;
     const {
       dragX: dragXValue,
       touchX: touchXValue,
@@ -105,7 +126,23 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     let dragX = dragXValue;
     let touchX = touchXValue;
 
-    touchXValue.setValue(0);
+    if (drawerPosition !== 'left') {
+      // Most of the code is written in a way to handle left-side drawer.
+      // In order to handle right-side drawer the only thing we need to
+      // do is to reverse events coming from gesture handler in a way they
+      // emulate left-side drawer gestures. E.g. dragX is simply -dragX, and
+      // touchX is calulcated by subtracing real touchX from the width of the
+      // container (such that when touch happens at the right edge the value
+      // is simply 0)
+      dragX = Animated.multiply(new Animated.Value(-1), dragXValue);
+      touchX = Animated.add(
+        new Animated.Value(containerWidth),
+        Animated.multiply(new Animated.Value(-1), touchXValue)
+      );
+      touchXValue.setValue(containerWidth);
+    } else {
+      touchXValue.setValue(0);
+    }
 
     // While closing the drawer when user starts gesture outside of its area (in greyed
     // out part of the window), we want the drawer to follow only once finger reaches the
@@ -132,6 +169,18 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     // This is used only when drawerType is "front"
     //
     let translationX = dragX;
+    if (drawerType === 'front') {
+      const startPositionX = Animated.add(
+        touchX,
+        Animated.multiply(new Animated.Value(-1), dragX)
+      );
+
+      const dragOffsetFromOnStartPosition = startPositionX.interpolate({
+        inputRange: [drawerWidth - 1, drawerWidth, drawerWidth + 1],
+        outputRange: [0, 0, 1],
+      });
+      translationX = Animated.add(dragX, dragOffsetFromOnStartPosition);
+    }
 
     this._openValue = Animated.add(translationX, drawerTranslation).interpolate(
       {
@@ -143,8 +192,17 @@ export default class DrawerLayout extends Component<PropType, StateType> {
 
     this._onGestureEvent = Animated.event(
       [{ nativeEvent: { translationX: dragXValue, x: touchXValue } }],
-      { useNativeDriver: true }
+      { useNativeDriver: props.useNativeAnimations }
     );
+  };
+
+  _handleContainerLayout = ({ nativeEvent }) => {
+    this.setState({ containerWidth: nativeEvent.layout.width });
+  };
+
+  _emitStateChanged = (newState: string, drawerWillShow: boolean) => {
+    this.props.onDrawerStateChanged &&
+      this.props.onDrawerStateChanged(newState, drawerWillShow);
   };
 
   _openingHandlerStateChange = ({ nativeEvent }) => {
@@ -152,145 +210,233 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       this._handleRelease(nativeEvent);
     } else if (nativeEvent.state === State.ACTIVE) {
       this._emitStateChanged(DRAGGING, false);
-      Keyboard.dismiss();
+      if (this.props.keyboardDismissMode === 'on-drag') {
+        Keyboard.dismiss();
+      }
+      if (this.props.hideStatusBar) {
+        StatusBar.setHidden(true, this.props.statusBarAnimation || 'slide');
+      }
     }
   };
 
-  closeHandStateChange = ({nativeEvent}) => {
-    //when touch is ending ,close the drawView
-    if (nativeEvent.state === 5 && this.state.isOpening) {  //5: release the touch
-    this.closeDrawer()
+  _onTapHandlerStateChange = ({ nativeEvent }) => {
+    if (nativeEvent.oldState === State.ACTIVE) {
+      this.closeDrawer();
     }
-  }
-
-  _emitStateChanged = (newState: string, drawerWillShow: boolean) => {
-    this.props.onDrawerStateChanged &&
-    this.props.onDrawerStateChanged(newState, drawerWillShow);
   };
 
-    _handleRelease = nativeEvent => {
-    const { drawerWidth } = this.props;
-    const { drawerShown, containerWidth } = this.state;
+  _handleRelease = nativeEvent => {
+    const { drawerWidth, drawerPosition, drawerType } = this.props;
+    const { containerWidth } = this.state;
     let { translationX: dragX, velocityX, x: touchX } = nativeEvent;
+
+    if (drawerPosition !== 'left') {
+      // See description in _updateAnimatedEvent about why events are flipped
+      // for right-side drawer
+      dragX = -dragX;
+      touchX = containerWidth - touchX;
+      velocityX = -velocityX;
+    }
 
     const gestureStartX = touchX - dragX;
     let dragOffsetBasedOnStart = 0;
 
+    if (drawerType === 'front') {
+      dragOffsetBasedOnStart =
+        gestureStartX > drawerWidth ? gestureStartX - drawerWidth : 0;
+    }
+
     const startOffsetX =
-      dragX + dragOffsetBasedOnStart + (drawerShown ? drawerWidth : 0);
+      dragX + dragOffsetBasedOnStart + (this._drawerShown ? drawerWidth : 0);
     const projOffsetX = startOffsetX + DRAG_TOSS * velocityX;
 
     const shouldOpen = projOffsetX > drawerWidth / 2;
 
     if (shouldOpen) {
-      this._animateDrawer({
-        fromValue: startOffsetX,
-        toValue: drawerWidth,
-        velocity: velocityX,
-      });
+      this._animateDrawer(startOffsetX, drawerWidth, velocityX);
     } else {
-      this._animateDrawer({
-        fromValue: startOffsetX,
-        toValue: 0,
-        velocity: velocityX,
-      });
+      this._animateDrawer(startOffsetX, 0, velocityX);
     }
   };
 
-  _animateDrawer = ({
-                      fromValue,
-                      toValue,
-                      velocity,
-                    }: {
-    fromValue: number,
-    toValue: number,
-    velocity: number,
-  }) => {
-    this.state.dragX.setValue(0);
-    this.state.touchX.setValue(0);
+  _updateShowing = (showing: boolean) => {
+    this._drawerShown = showing;
+    this._accessibilityIsModalView.current &&
+      this._accessibilityIsModalView.current.setNativeProps({
+        accessibilityViewIsModal: showing,
+      });
+    this._pointerEventsView.current &&
+      this._pointerEventsView.current.setNativeProps({
+        pointerEvents: showing ? 'auto' : 'none',
+      });
 
-    if (typeof fromValue === 'number') {
-      this.state.drawerTranslation.setValue(fromValue);
+    const { drawerPosition, minSwipeDistance, edgeWidth } = this.props;
+    const fromLeft = drawerPosition === 'left';
+    // gestureOrientation is 1 if the expected gesture is from left to right and -1 otherwise
+    // e.g. when drawer is on the left and is closed we expect left to right gesture, thus
+    // orientation will be 1.
+    const gestureOrientation = (fromLeft ? 1 : -1) * (showing ? -1 : 1);
+
+    // When drawer is closed we want the hitSlop to be horizontally shorter
+    // than the container size by the value of SLOP. This will make it only
+    // activate when gesture happens not further than SLOP away from the edge
+    const hitSlop = fromLeft
+      ? { left: 0, width: showing ? undefined : edgeWidth }
+      : { right: 0, width: showing ? undefined : edgeWidth };
+    this._panGestureHandler.current &&
+      this._panGestureHandler.current.setNativeProps({
+        hitSlop,
+        minOffsetX: gestureOrientation * minSwipeDistance,
+      });
+  };
+
+  _animateDrawer = (fromValue: ?number, toValue: number, velocity: number) => {
+    this.state.dragX.setValue(0);
+    this.state.touchX.setValue(
+      this.props.drawerPosition === 'left' ? 0 : this.state.containerWidth
+    );
+
+    if (fromValue !== undefined) {
+      let nextFramePosition = fromValue;
+      if (this.props.useNativeAnimations) {
+        // When using native driver, we predict the next position of the animation
+        // because it takes one frame of a roundtrip to pass RELEASE event from
+        // native driver to JS before we can start animating. Without it, it is more
+        // noticable that the frame is dropped.
+        if (fromValue < toValue && velocity > 0) {
+          nextFramePosition = Math.min(fromValue + velocity / 60.0, toValue);
+        } else if (fromValue > toValue && velocity < 0) {
+          nextFramePosition = Math.max(fromValue + velocity / 60.0, toValue);
+        }
+      }
+      this.state.drawerTranslation.setValue(nextFramePosition);
     }
 
     const willShow = toValue !== 0;
-    this.state.drawerShown = willShow
+    this._updateShowing(willShow);
     this._emitStateChanged(SETTLING, willShow);
-    this.touchableView.setNativeProps({
-      pointerEvents: willShow ? 'box-only' : 'box-none'
-    })
-    
+    if (this.props.hideStatusBar) {
+      StatusBar.setHidden(willShow, this.props.statusBarAnimation || 'slide');
+    }
     Animated.spring(this.state.drawerTranslation, {
       velocity,
       bounciness: 0,
-      overshootClamping: true,
       toValue,
-      useNativeDriver: true,
+      useNativeDriver: this.props.useNativeAnimations,
     }).start(({ finished }) => {
-      if (willShow) {
-        this.state.isOpening = true
-      } else {
-        this.state.isOpening = false
+      if (finished) {
+        this._emitStateChanged(IDLE, willShow);
+        if (willShow) {
+          this.props.onDrawerOpen && this.props.onDrawerOpen();
+        } else {
+          this.props.onDrawerClose && this.props.onDrawerClose();
+        }
       }
-      this._emitStateChanged(IDLE, willShow);
     });
   };
 
   openDrawer = (options: DrawerMovementOptionType = {}) => {
-    if (this.state.drawerShown) {
-      return
-    }
-    this._animateDrawer({
-      toValue: this.props.drawerWidth,
-      velocity: options.velocity ? options.velocity : 0,
-    });
+    this._animateDrawer(
+      undefined,
+      this.props.drawerWidth,
+      options.velocity ? options.velocity : 0
+    );
   };
 
   closeDrawer = (options: DrawerMovementOptionType = {}) => {
-    if (!this.state.drawerShown) {
-      return
-    }
-    this._animateDrawer({
-      toValue: 0,
-      velocity: options.velocity ? options.velocity : 0,
+    this._animateDrawer(undefined, 0, options.velocity ? options.velocity : 0);
+  };
+
+  _renderOverlay = () => {
+    /* Overlay styles */
+    invariant(this._openValue, 'should be set');
+    const overlayOpacity = this._openValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 0.7],
+      extrapolate: 'clamp',
     });
+    const dynamicOverlayStyles = {
+      opacity: overlayOpacity,
+      backgroundColor: this.props.overlayColor,
+    };
+    return (
+      <TapGestureHandler onHandlerStateChange={this._onTapHandlerStateChange}>
+        <Animated.View
+          pointerEvents={this._drawerShown ? 'auto' : 'none'}
+          ref={this._pointerEventsView}
+          style={[styles.overlay, dynamicOverlayStyles]}
+        />
+      </TapGestureHandler>
+    );
   };
 
   _renderDrawer = () => {
-    const { drawerShown } = this.state;
     const {
       drawerBackgroundColor,
       drawerWidth,
+      drawerPosition,
+      drawerType,
       contentContainerStyle,
     } = this.props;
 
+    const fromLeft = drawerPosition === 'left';
+    const drawerSlide = drawerType !== 'back';
+    const containerSlide = drawerType !== 'front';
+
+    const dynamicDrawerStyles = {
+      backgroundColor: drawerBackgroundColor,
+      width: drawerWidth,
+    };
     const openValue = this._openValue;
     invariant(openValue, 'should be set');
 
-    const containerTranslateX = openValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, drawerWidth],
-      extrapolate: 'clamp',
-    });
-    let containerStyles = {
-      transform: [{ translateX: containerTranslateX }],
+    let containerStyles;
+    if (containerSlide) {
+      const containerTranslateX = openValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: fromLeft ? [0, drawerWidth] : [0, -drawerWidth],
+        extrapolate: 'clamp',
+      });
+      containerStyles = {
+        transform: [{ translateX: containerTranslateX }],
+      };
+    }
+
+    let drawerTranslateX = 0;
+    if (drawerSlide) {
+      const closedDrawerOffset = fromLeft ? -drawerWidth : drawerWidth;
+      drawerTranslateX = openValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [closedDrawerOffset, 0],
+        extrapolate: 'clamp',
+      });
+    }
+    const drawerStyles = {
+      transform: [{ translateX: drawerTranslateX }],
+      flexDirection: fromLeft ? 'row' : 'row-reverse',
     };
 
     return (
-      <Animated.View style={styles.main}>
-      <TapGestureHandler  onHandlerStateChange={this.closeHandStateChange} maxDeltaX={5} maxDeltaY={5}>
-          <Animated.View 
-          style={[styles.containerInFront, containerStyles, contentContainerStyle]}
-          ref={ref => this.touchableView = ref}>
-            {typeof this.props.children === 'function' ? this.props.children(this._openValue) : this.props.children}
-          </Animated.View >
-      </TapGestureHandler>
-      
+      <Animated.View style={styles.main} onLayout={this._handleContainerLayout}>
+        <Animated.View
+          style={[
+            drawerType === 'front'
+              ? styles.containerOnBack
+              : styles.containerInFront,
+            containerStyles,
+            contentContainerStyle,
+          ]}>
+          {typeof this.props.children === 'function'
+            ? this.props.children(this._openValue)
+            : this.props.children}
+          {this._renderOverlay()}
+        </Animated.View>
         <Animated.View
           pointerEvents="box-none"
-          style={[styles.drawerContainer]}
-        >
-          <View style={[styles.drawer]}>
+          accessibilityViewIsModal={this._drawerShown}
+          ref={this._accessibilityIsModalView}
+          style={[styles.drawerContainer, drawerStyles]}>
+          <View style={[styles.drawer, dynamicDrawerStyles]}>
             {this.props.renderNavigationView(this._openValue)}
           </View>
         </Animated.View>
@@ -299,17 +445,30 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   render() {
-    let offset = Platform.select({
-      ios: [-20, 20],
-      android: [-50, 50]
-    })
+    const { drawerPosition, edgeWidth, minSwipeDistance } = this.props;
+
+    const fromLeft = drawerPosition === 'left';
+
+    // gestureOrientation is 1 if the expected gesture is from left to right and -1 otherwise
+    // e.g. when drawer is on the left and is closed we expect left to right gesture, thus
+    // orientation will be 1.
+    const gestureOrientation =
+      (fromLeft ? 1 : -1) * (this._drawerShown ? -1 : 1);
+
+    // When drawer is closed we want the hitSlop to be horizontally shorter
+    // than the container size by the value of SLOP. This will make it only
+    // activate when gesture happens not further than SLOP away from the edge
+    const hitSlop = fromLeft
+      ? { left: 0, width: this._drawerShown ? undefined : edgeWidth }
+      : { right: 0, width: this._drawerShown ? undefined : edgeWidth };
+
     return (
       <PanGestureHandler
-        activeOffsetX={offset}
+        ref={this._panGestureHandler}
+        hitSlop={hitSlop}
+        minOffsetX={gestureOrientation * minSwipeDistance}
         onGestureEvent={this._onGestureEvent}
-        onHandlerStateChange={this._openingHandlerStateChange}
-        ref={this.props.gestureRef}
-      >
+        onHandlerStateChange={this._openingHandlerStateChange}>
         {this._renderDrawer()}
       </PanGestureHandler>
     );
@@ -334,5 +493,9 @@ const styles = StyleSheet.create({
     flex: 1,
     zIndex: 0,
     overflow: 'hidden',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1000,
   },
 });
