@@ -9,11 +9,12 @@
 // that could be found when using the drawer component
 
 import React, { Component } from 'react';
-import { Animated, StyleSheet, View, Keyboard, StatusBar, Dimensions } from 'react-native';
+import { Animated, StyleSheet, View, Keyboard, StatusBar, Platform, Dimensions } from 'react-native';
 import invariant from 'invariant';
 import { AnimatedEvent } from 'react-native/Libraries/Animated/src/AnimatedEvent';
 
 import { PanGestureHandler, TapGestureHandler, State } from 'react-native-gesture-handler';
+
 const { width: windowWidth, height: windowHeight } = Dimensions.get('window')
 
 const DRAG_TOSS = 0.05;
@@ -445,28 +446,16 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   };
 
   render() {
-    const { drawerPosition, edgeWidth, minSwipeDistance } = this.props;
 
-    const fromLeft = drawerPosition === 'left';
-
-    // gestureOrientation is 1 if the expected gesture is from left to right and -1 otherwise
-    // e.g. when drawer is on the left and is closed we expect left to right gesture, thus
-    // orientation will be 1.
-    const gestureOrientation =
-      (fromLeft ? 1 : -1) * (this._drawerShown ? -1 : 1);
-
-    // When drawer is closed we want the hitSlop to be horizontally shorter
-    // than the container size by the value of SLOP. This will make it only
-    // activate when gesture happens not further than SLOP away from the edge
-    const hitSlop = fromLeft
-      ? { left: 0, width: this._drawerShown ? undefined : edgeWidth }
-      : { right: 0, width: this._drawerShown ? undefined : edgeWidth };
+    let offset = Platform.select({  //fix complex with swipe view
+      ios: [-20, 20],
+      android: [-50, 50]
+    })
 
     return (
       <PanGestureHandler
         ref={this._panGestureHandler}
-        hitSlop={hitSlop}
-        minOffsetX={gestureOrientation * minSwipeDistance}
+        activeOffsetX={offset}
         onGestureEvent={this._onGestureEvent}
         onHandlerStateChange={this._openingHandlerStateChange}>
         {this._renderDrawer()}
