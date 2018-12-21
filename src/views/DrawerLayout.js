@@ -215,9 +215,9 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     const willShow = toValue !== 0;
     this.state.drawerShown = willShow
     this._emitStateChanged(SETTLING, willShow);
-    // this.touchableView.setNativeProps({
-    //   pointerEvents: willShow ? 'none' : 'none'
-    // })
+    this.containerView.setNativeProps({
+      pointerEvents: willShow ? 'box-only' : 'auto'
+    })
     this.tapGesture.setNativeProps({
       enabled: willShow ? true : false
     });
@@ -282,6 +282,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
         enabled={false} 
         ref={ref => this.tapGesture = ref}>
           <Animated.View 
+            ref={ref => this.containerView = ref}
             style={[styles.containerInFront, containerStyles, contentContainerStyle]}>
             {
               typeof this.props.children === 'function' 
