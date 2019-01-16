@@ -450,9 +450,10 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     const hitSlop = fromLeft
       ? { right: drawerShown ? 0 : edgeWidth - containerWidth }
       : { left: drawerShown ? 0 : edgeWidth - containerWidth };
-
+    const {lockCloseDrawer} = this.props
     return (
       <PanGestureHandler
+        enabled={!lockCloseDrawer}
         hitSlop={hitSlop}
         minOffsetX={gestureOrientation * minSwipeDistance}
         maxDeltaY={15}
