@@ -307,8 +307,10 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       ios: [-20, 20],
       android: [-50, 50]
     })
+    const {lockCloseDrawer} = this.props
     return (
       <PanGestureHandler
+        enabled={!lockCloseDrawer}
         activeOffsetX={offset}
         onGestureEvent={this._onGestureEvent}
         onHandlerStateChange={this._openingHandlerStateChange}

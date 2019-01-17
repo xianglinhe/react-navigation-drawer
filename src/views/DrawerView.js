@@ -91,6 +91,17 @@ export default class DrawerView extends React.PureComponent {
     );
   };
 
+    needCloseLockDrawer = (currentRouteName, drawerLockClosedRoutes) => {
+        if (drawerLockClosedRoutes) {
+            for (let routeName of drawerLockClosedRoutes) {
+                if (routeName === currentRouteName) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
   render() {
     const { state } = this.props.navigation;
     const activeKey = state.routes[state.index].key;
@@ -98,11 +109,15 @@ export default class DrawerView extends React.PureComponent {
 
     const { drawerLockMode } = descriptor.options;
 
+    const routes = state.routes[state.index].routes
+    const currentRouteName = routes[routes.length - 1].routeName
+
     return (
       <DrawerLayout
         ref={c => {
           this._drawer = c;
         }}
+        lockCloseDrawer={this.needCloseLockDrawer(currentRouteName, this.props.navigationConfig.drawerLockClosedRoutes)}
         drawerLockMode={
           drawerLockMode ||
           (this.props.screenProps && this.props.screenProps.drawerLockMode) ||
