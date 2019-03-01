@@ -324,7 +324,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
         activeOffsetX={offset}
         onGestureEvent={this._onGestureEvent}
         onHandlerStateChange={this._openingHandlerStateChange}
-        ref={this.props.gestureRef}>
+        ref={ref => this.panGesture = ref}>
           {this._renderDrawer()}
       </PanGestureHandler>
     );
