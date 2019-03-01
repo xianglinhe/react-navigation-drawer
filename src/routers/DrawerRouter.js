@@ -32,6 +32,8 @@ export default (routeConfigs, config = {}) => {
         openDrawer: () => DrawerActions.openDrawer({ key: navStateKey }),
         closeDrawer: () => DrawerActions.closeDrawer({ key: navStateKey }),
         toggleDrawer: () => DrawerActions.toggleDrawer({ key: navStateKey }),
+        enableDrawer: () => DrawerActions.enableDrawer({ key: navStateKey }),
+        disableDrawer: () => DrawerActions.disableDrawer({ key: navStateKey }),
         ...switchRouter.getActionCreators(route, navStateKey),
       };
     },
@@ -45,6 +47,8 @@ export default (routeConfigs, config = {}) => {
           openId: 0,
           closeId: 0,
           toggleId: 0,
+          enableId: 0,
+          disableId: 0
         };
       }
 
@@ -92,6 +96,20 @@ export default (routeConfigs, config = {}) => {
           return {
             ...state,
             toggleId: state.toggleId + 1,
+          };
+        }
+
+        if (action.type === DrawerActions.DISABLE_DRAWER) {
+          return {
+            ...state,
+            disableId: state.disableId + 1
+          };
+        }
+
+        if (action.type === DrawerActions.ENABLE_DRAWER) {
+          return {
+            ...state,
+            enableId: state.enableId + 1
           };
         }
       }

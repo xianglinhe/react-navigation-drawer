@@ -253,6 +253,18 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     });
   };
 
+  enableDrawer = (options = {}) => {
+    this.panGesture.setNativeProps({
+      enabled: true
+    });
+  };
+
+  disableDrawer = (options = {}) => {
+    this.panGesture.setNativeProps({
+      enabled: false
+    });
+  };
+
   _renderDrawer = () => {
     const { drawerShown } = this.state;
     const {
