@@ -222,7 +222,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this.tapGesture.setNativeProps({
       enabled: willShow ? true : false
     });
-    
+
     this.panGesture.setNativeProps({
       enabled: willShow ? false : true
     });
@@ -269,18 +269,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     });
   };
 
-  enableHitSlop = (options = {}) => {
-    this.panGesture.setNativeProps({
-      hitSlop: {left:-20,right:0}
-    });
-  };
-
-  disableHitSlop = (options = {}) => {
-    this.panGesture.setNativeProps({
-      hitSlop: 0
-    });
-  };
-
   _renderDrawer = () => {
     const { drawerShown } = this.state;
     const {
@@ -305,20 +293,20 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     return (
       <Animated.View style={styles.main}>
 
-      <TapGestureHandler  
-        onHandlerStateChange={this._tapGestureHandler} 
-        enabled={false} 
+      <TapGestureHandler
+        onHandlerStateChange={this._tapGestureHandler}
+        enabled={false}
         ref={ref => this.tapGesture = ref}>
-          <Animated.View 
+          <Animated.View
             ref={ref => this.containerView = ref}
             style={[styles.containerInFront, containerStyles, contentContainerStyle]}>
             {
-              typeof this.props.children === 'function' 
-              ? this.props.children(this._openValue) 
+              typeof this.props.children === 'function'
+              ? this.props.children(this._openValue)
               : this.props.children}
           </Animated.View >
       </TapGestureHandler>
-      
+
         <Animated.View
           pointerEvents="box-none"
           style={[styles.drawerContainer]}>
