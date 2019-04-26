@@ -111,6 +111,7 @@ export default class DrawerView extends React.PureComponent {
         ref={c => {
           this._drawer = c;
         }}
+        stackCount={state.routes[0].routes.length}
         drawerLockMode={
           drawerLockMode ||
           (this.props.screenProps && this.props.screenProps.drawerLockMode) ||
