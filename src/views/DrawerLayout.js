@@ -64,6 +64,7 @@ export type DrawerMovementOptionType = {
 export default class DrawerLayout extends Component<PropType, StateType> {
   static defaultProps = {
     drawerWidth: 200,
+    stackCount: 1,
   };
 
   static positions = {
@@ -179,7 +180,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
       dragX + dragOffsetBasedOnStart + (drawerShown ? drawerWidth : 0);
     const projOffsetX = startOffsetX + DRAG_TOSS * velocityX;
 
-    const shouldOpen = projOffsetX > drawerWidth / 2;
+    const shouldOpen = projOffsetX > 80;
 
     if (shouldOpen) {
       this._animateDrawer({
@@ -221,7 +222,10 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     this.tapGesture.setNativeProps({
       enabled: willShow ? true : false
     });
-    
+
+    this.panGesture.setNativeProps({
+      enabled: willShow ? false : true
+    });
     Animated.spring(this.state.drawerTranslation, {
       velocity,
       bounciness: 0,
@@ -289,20 +293,20 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     return (
       <Animated.View style={styles.main}>
 
-      <TapGestureHandler  
-        onHandlerStateChange={this._tapGestureHandler} 
-        enabled={false} 
+      <TapGestureHandler
+        onHandlerStateChange={this._tapGestureHandler}
+        enabled={false}
         ref={ref => this.tapGesture = ref}>
-          <Animated.View 
+          <Animated.View
             ref={ref => this.containerView = ref}
             style={[styles.containerInFront, containerStyles, contentContainerStyle]}>
             {
-              typeof this.props.children === 'function' 
-              ? this.props.children(this._openValue) 
+              typeof this.props.children === 'function'
+              ? this.props.children(this._openValue)
               : this.props.children}
           </Animated.View >
       </TapGestureHandler>
-      
+
         <Animated.View
           pointerEvents="box-none"
           style={[styles.drawerContainer]}>
@@ -321,6 +325,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     })
     return (
       <PanGestureHandler
+        hitSlop={this.props.stackCount==1?0:{left:-20,right:0}}
         activeOffsetX={offset}
         onGestureEvent={this._onGestureEvent}
         onHandlerStateChange={this._openingHandlerStateChange}
