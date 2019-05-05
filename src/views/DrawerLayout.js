@@ -315,7 +315,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     return <PanGestureHandler hitSlop={this.props.stackCount == 1 ? 0 : { left: -this.props.hitSlopWidth, right: 0 }} activeOffsetX={offset} onGestureEvent={this._onGestureEvent} onHandlerStateChange={this._openingHandlerStateChange} ref={ref => this.panGesture = ref}>
           {this._renderDrawer()}
       </PanGestureHandler>
-    );
   }
 }
 
