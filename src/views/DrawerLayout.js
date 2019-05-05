@@ -305,7 +305,6 @@ export default class DrawerLayout extends Component<PropType, StateType> {
             </View>
         </Animated.View>
       </Animated.View>
-    );
   };
 
   render() {
