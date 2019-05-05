@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "format": "eslint . --fix",
     "precommit": "yarn lint && yarn test",
-    "build": "mkdir -p dist/img && cp -rf src/img/* dist/img/ && babel --no-babelrc --plugins=syntax-jsx,syntax-class-properties,syntax-object-rest-spread,transform-flow-strip-types src --out-dir dist --ignore '**/__tests__/**'",
+    "build": "mkdir -p dist/img && cp -rf src/img/* dist/img/",
     "prepare": "yarn build"
   },
   "keywords": [
