@@ -15,7 +15,7 @@
 // that could be found when using the drawer component
 
 import React, { Component } from 'react';
-import { Animated, StyleSheet, View, Keyboard, Platform } from 'react-native';
+import {Animated, StyleSheet, View, Image, Keyboard, Platform, Dimensions} from 'react-native';
 import invariant from '../utils/invariant';
 import { AnimatedEvent } from 'react-native/Libraries/Animated/src/AnimatedEvent';
 
@@ -26,6 +26,7 @@ import {
 } from 'react-native-gesture-handler';
 
 const DRAG_TOSS = 0.05;
+const { width: windowWidth, height: windowHeight } = Dimensions.get('window')
 
 const IDLE = 'Idle';
 const DRAGGING = 'Dragging';
@@ -65,6 +66,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
   static defaultProps = {
     drawerWidth: 200,
     stackCount: 1,
+    hitSlopWidth:0
   };
 
   static positions = {
@@ -176,23 +178,23 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     const gestureStartX = touchX - dragX;
     let dragOffsetBasedOnStart = 0;
 
-    const startOffsetX =
-      dragX + dragOffsetBasedOnStart + (drawerShown ? drawerWidth : 0);
-    const projOffsetX = startOffsetX + DRAG_TOSS * velocityX;
+    const startOffsetX = dragX + dragOffsetBasedOnStart + (drawerShown ? drawerWidth : 0);
 
-    const shouldOpen = projOffsetX > 80;
+    //原来计算偏移量有问题，已经打开要关闭的时候，偏移量是互补的
+    const projOffsetX = drawerShown?Math.abs(dragX):startOffsetX + DRAG_TOSS * velocityX;
+    const shouldOpen = projOffsetX > 80
 
     if (shouldOpen) {
       this._animateDrawer({
         fromValue: startOffsetX,
-        toValue: drawerWidth,
-        velocity: velocityX,
+        toValue: drawerShown?0:drawerWidth,
+        velocity: velocityX
       });
     } else {
       this._animateDrawer({
         fromValue: startOffsetX,
-        toValue: 0,
-        velocity: velocityX,
+        toValue: drawerShown?drawerWidth:0,
+        velocity: velocityX
       });
     }
   };
@@ -224,7 +226,7 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     });
 
     this.panGesture.setNativeProps({
-      enabled: willShow ? false : true
+      hitSlop: willShow?{left: -this.props.drawerWidth, right: 0 }:this.props.stackCount == 1 ? 0 : { left: -this.props.hitSlopWidth, right: 0 }
     });
     Animated.spring(this.state.drawerTranslation, {
       velocity,
@@ -290,26 +292,14 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     };
 
     //disable tap gesture by default, will be enabled when drawer is open
-    return (
-      <Animated.View style={styles.main}>
-
-      <TapGestureHandler
-        onHandlerStateChange={this._tapGestureHandler}
-        enabled={false}
-        ref={ref => this.tapGesture = ref}>
-          <Animated.View
-            ref={ref => this.containerView = ref}
-            style={[styles.containerInFront, containerStyles, contentContainerStyle]}>
-            {
-              typeof this.props.children === 'function'
-              ? this.props.children(this._openValue)
-              : this.props.children}
-          </Animated.View >
-      </TapGestureHandler>
-
-        <Animated.View
-          pointerEvents="box-none"
-          style={[styles.drawerContainer]}>
+    return <Animated.View style={styles.main}>
+        <TapGestureHandler onHandlerStateChange={this._tapGestureHandler} enabled={false} ref={ref => this.tapGesture = ref}>
+            <Animated.View ref={ref => this.containerView = ref} style={[styles.containerInFront, containerStyles, contentContainerStyle]}>
+              {typeof this.props.children === 'function' ? this.props.children(this._openValue) : this.props.children}
+              <Image style={styles.shadowImageStyle} source={require('../img/navi_left_shadow.png')}/>
+            </Animated.View>
+        </TapGestureHandler>
+        <Animated.View pointerEvents="box-none" style={[styles.drawerContainer]}>
             <View style={[styles.drawer]}>
               {this.props.renderNavigationView(this._openValue)}
             </View>
@@ -322,14 +312,8 @@ export default class DrawerLayout extends Component<PropType, StateType> {
     let offset = Platform.select({
       ios: [-20, 20],
       android: [-50, 50]
-    })
-    return (
-      <PanGestureHandler
-        hitSlop={this.props.stackCount==1?0:{left:-20,right:0}}
-        activeOffsetX={offset}
-        onGestureEvent={this._onGestureEvent}
-        onHandlerStateChange={this._openingHandlerStateChange}
-        ref={ref => this.panGesture = ref}>
+    });
+    return <PanGestureHandler hitSlop={this.props.stackCount == 1 ? 0 : { left: -this.props.hitSlopWidth, right: 0 }} activeOffsetX={offset} onGestureEvent={this._onGestureEvent} onHandlerStateChange={this._openingHandlerStateChange} ref={ref => this.panGesture = ref}>
           {this._renderDrawer()}
       </PanGestureHandler>
     );
@@ -354,5 +338,12 @@ const styles = StyleSheet.create({
     flex: 1,
     zIndex: 0,
     overflow: 'hidden',
+  },
+  shadowImageStyle: {
+    height:windowHeight,
+    right:windowWidth,
+    bottom:0,
+    position: `absolute`,
+    resizeMode:'cover'
   },
 });
