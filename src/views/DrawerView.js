@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dimensions } from 'react-native';
+import { Dimensions, DeviceEventEmitter } from 'react-native';
 import DrawerLayout from './DrawerLayout';
 import { SceneView } from 'react-navigation';
 
