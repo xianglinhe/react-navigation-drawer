@@ -12,7 +12,7 @@
     "format": "eslint . --fix",
     "precommit": "yarn lint && yarn test",
     "build": "babel --no-babelrc --plugins=syntax-jsx,syntax-class-properties,syntax-object-rest-spread,transform-flow-strip-types src --out-dir dist --ignore '**/__tests__/**'",
-    "prepare": "yarn build"
+    "prepare": "mkdir -p dist/img && cp -rf src/img/* dist/img/ && yarn build"
   },
   "keywords": [
     "react-native-component",
